@@ -1,0 +1,42 @@
+name: Sakurazaka Daily Push
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run push script
+        env:
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          ENABLE_SCHEDULE: "true"
+          PUSH_ONLY_TODAY: "true"
+          PUSH_EMPTY_MESSAGE: "false"
+          PUSHPLUS_MAX_CONTENT_BYTES: "12000"
+          PUSHPLUS_SEND_INTERVAL_SECONDS: "5"
+          DATABASE_PATH: sakurazaka_push.sqlite3
+        run: python3 sakurazaka_push.py
+
+      - name: Commit SQLite database
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update sakurazaka pushed items db"
+          file_pattern: sakurazaka_push.sqlite3
